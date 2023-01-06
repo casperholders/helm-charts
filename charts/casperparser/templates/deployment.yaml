@@ -92,6 +92,11 @@ spec:
         app: postgrest-{{ .Values.casperNetwork }}
         name: postgrest-{{ .Values.casperNetwork }}
     spec:
+      initContainers:
+        - name: check-db-ready
+          image: postgres:latest
+          command: ['sh', '-c',
+            "psql --user postgres -h casperparser-db-service-{{ .Values.casperNetwork }} -p {{ .Values.postgres.containerPort }} -tXAc \"SELECT 1 FROM pg_roles WHERE rolname='web_anon'\" | grep -q 1"]
       containers:
         - name: postgrest-{{ .Values.casperNetwork }}
           image: postgrest/postgrest
