@@ -1,0 +1,212 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: casperparser-worker-{{ .Values.casperNetwork }}
+  name: casperparser-worker-{{ .Values.casperNetwork }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: casperparser-worker-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casperparser-worker-{{ .Values.casperNetwork }}
+        name: casperparser-worker-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: casperparser-worker-{{ .Values.casperNetwork }}
+          image: killianh/casperparser
+          imagePullPolicy: Always
+          args: [ "worker" ]
+          volumeMounts:
+            - name: config-volume
+              mountPath: /root/.casperParser.yaml
+              subPath: .casperParser.yaml
+          envFrom:
+            - configMapRef:
+                name: casperparser-config-{{ .Values.casperNetwork }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: parser-config
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: casperparser-client-{{ .Values.casperNetwork }}
+  name: casperparser-client-{{ .Values.casperNetwork }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: casperparser-client-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casperparser-client-{{ .Values.casperNetwork }}
+        name: casperparser-client-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: casperparser-client-{{ .Values.casperNetwork }}
+          image: killianh/casperparser
+          imagePullPolicy: Always
+          args: [ "client" ]
+          resources: { }
+          volumeMounts:
+            - name: config-volume
+              mountPath: /root/.casperParser.yaml
+              subPath: .casperParser.yaml
+          envFrom:
+            - configMapRef:
+                name: casperparser-config-{{ .Values.casperNetwork }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: parser-config
+      restartPolicy: Always
+{{- if .Values.postgrest.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgrest-{{ .Values.casperNetwork }}
+  name: postgrest-{{ .Values.casperNetwork }}
+spec:
+  selector:
+    matchLabels:
+      app: postgrest-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgrest-{{ .Values.casperNetwork }}
+        name: postgrest-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: postgrest-{{ .Values.casperNetwork }}
+          image: postgrest/postgrest
+          ports:
+            - containerPort: {{ .Values.postgrest.containerPort }}
+          imagePullPolicy: Always
+          resources: { }
+          envFrom:
+            - configMapRef:
+                name: postgrest-config-{{ .Values.casperNetwork }}
+      restartPolicy: Always
+{{- end }}
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: casperparser-db-{{ .Values.casperNetwork }}
+  name: casperparser-db-{{ .Values.casperNetwork }}
+spec:
+  selector:
+    matchLabels:
+      app: casperparser-db-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casperparser-db-{{ .Values.casperNetwork }}
+        name: casperparser-db-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: casperparser-db-{{ .Values.casperNetwork }}
+          image: postgres:latest
+          ports:
+            - containerPort: {{ .Values.postgres.containerPort }}
+          env:
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: "trust"
+            - name: POSTGRES_DB
+              value: "casperparser-{{ .Values.casperNetwork }}"
+          volumeMounts:
+            - name: max-conns
+              mountPath: /docker-entrypoint-initdb.d
+            {{- if .Values.postgres.volume.enabled }}
+            - name: casperparser-{{ .Values.casperNetwork }}-pg-volume
+              mountPath: /var/lib/postgresql/data
+            {{- end }}
+      volumes:
+        - name: max-conns
+          configMap:
+            name: max-conns
+        {{- if .Values.postgres.volume.enabled }}
+        - name: casperparser-{{ .Values.casperNetwork }}-pg-volume
+          persistentVolumeClaim:
+            claimName: casperparser-{{ .Values.casperNetwork }}-pg-volume
+        {{- end }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: casperparser-redis-{{ .Values.casperNetwork }}
+  name: casperparser-redis-{{ .Values.casperNetwork }}
+spec:
+  selector:
+    matchLabels:
+      app: casperparser-redis-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casperparser-redis-{{ .Values.casperNetwork }}
+        name: casperparser-redis-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: casperparser-redis-{{ .Values.casperNetwork }}
+          image: redis:latest
+          ports:
+            - containerPort: {{ .Values.redis.containerPort }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: asynqmon-{{ .Values.casperNetwork }}
+  name: asynqmon-{{ .Values.casperNetwork }}
+spec:
+  selector:
+    matchLabels:
+      app: asynqmon-{{ .Values.casperNetwork }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: asynqmon-{{ .Values.casperNetwork }}
+        name: asynqmon-{{ .Values.casperNetwork }}
+    spec:
+      containers:
+        - name: asynqmon-{{ .Values.casperNetwork }}
+          image: hibiken/asynqmon
+          env:
+            - name: REDIS_ADDR
+              value: {{ include "casperparser.redis.addr" . | quote }}
+            {{- if .Values.asynqmon.metrics.enabled }}
+            - name: ENABLE_METRICS_EXPORTER
+              value: "true"
+            - name: PROMETHEUS_ADDR
+              value: {{ .Values.asynqmon.metrics.prometheus | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.asynqmon.containerPort }}

@@ -1,0 +1,14 @@
+{{- if .Values.traefik.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgrest-cert-{{ .Values.casperNetwork }}
+spec:
+  secretName: postgrest-cert-{{ .Values.casperNetwork }}
+  issuerRef:
+    name: {{ .Values.traefik.certmanager.issuerRef.name }}
+    kind: {{ .Values.traefik.certmanager.issuerRef.kind }}
+  commonName: {{ .Values.traefik.certmanager.domain }}
+  dnsNames:
+    - {{ .Values.traefik.certmanager.domain }}
+{{- end }}

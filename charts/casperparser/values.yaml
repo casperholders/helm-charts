@@ -1,0 +1,49 @@
+# Default values for casperparser.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+casperNetwork: testnet
+
+casperparser:
+  rpc: "http://rpc.testnet.casperholders.com/rpc"
+  events: "http://node.testnet.casperholders.com:9999/events/main"
+
+postgrest:
+  enabled: true
+  containerPort: 3000
+  maxRows: 100
+
+postgres:
+  enabled: true
+  containerPort: 5432
+  maxConns: 4000
+  volume:
+    enabled: true # If enable will create local PV/PVC
+    size: 200
+
+postgresOverride: ""
+
+redis:
+  enabled: true
+  containerPort: 6379
+
+redisOverride: ""
+
+asynqmon:
+  containerPort: 8080
+  metrics:
+    enabled: true
+    prometheus: "http://prometheus-stack-kube-prom-prometheus.monitoring:9090"
+
+# Only if you have traefik & certmanager already installed
+traefik:
+  enabled: true
+  certmanager:
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+    domain: data.testnet.casperholders.com
+
+cron:
+  enabled: true
+  withAccountsReparse: true

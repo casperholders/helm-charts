@@ -1,0 +1,43 @@
+{{- if .Values.traefik.enabled }}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: gzip-compress
+spec:
+  compress: {}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: postgrest-tls-{{ .Values.casperNetwork }}
+spec:
+  entryPoints:
+    - secure
+  routes:
+    - match: Host(`{{ .Values.traefik.certmanager.domain }}`)
+      middlewares:
+        - name: gzip-compress
+      kind: Rule
+      services:
+        - name: postgrest-service-{{ .Values.casperNetwork }}
+          port: {{ .Values.postgrest.containerPort }}
+  tls:
+    secretName: postgrest-cert-{{ .Values.casperNetwork }}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: postgrest-http-{{ .Values.casperNetwork }}
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`{{ .Values.traefik.certmanager.domain }}`)
+      middlewares:
+        - name: https-only
+      kind: Rule
+      services:
+        - name: postgrest-service-{{ .Values.casperNetwork }}
+          port: {{ .Values.postgrest.containerPort }}
+{{- end }}
