@@ -13,7 +13,7 @@ metadata:
   name: postgrest-tls-{{ .Values.casperNetwork }}
 spec:
   entryPoints:
-    - secure
+    - websecure
   routes:
     - match: Host(`{{ .Values.traefik.certmanager.domain }}`)
       middlewares:
