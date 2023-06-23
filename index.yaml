@@ -3,6 +3,16 @@ entries:
   casperparser:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2023-06-23T10:34:00.26769862Z"
+    description: A parser for the Casper Blockchain
+    digest: 877f3e69caf1112e483f436f21250c32db25a297f9ea5f4231255139091f125d
+    name: casperparser
+    type: application
+    urls:
+    - https://github.com/casperholders/helm-charts/releases/download/casperparser-0.3.0/casperparser-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2023-01-06T21:06:59.606822187Z"
     description: A parser for the Casper Blockchain
     digest: e3050670264e9ef515083bbb05df4be336a2c604c163b5d8a3fc2c370ed66597
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://github.com/casperholders/helm-charts/releases/download/casperparser-0.1.0/casperparser-0.1.0.tgz
     version: 0.1.0
-generated: "2023-01-06T21:06:59.606836887Z"
+generated: "2023-06-23T10:34:00.267709321Z"
